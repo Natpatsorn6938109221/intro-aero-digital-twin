@@ -1,6 +1,6 @@
 # Stage 4 Starter Specification: Live Cm–Alpha Relationship and Trim
 
-Student name: `[YOUR NAME]`
+Student name: `Natpatsorn Kongsrima`
 
 Complete only the boxes marked **STUDENT COMPLETES**. The instructor-provided engineering scope and the implementation contract must not be edited. When the specification is complete and approved, attach this one file to ChatGPT.
 
@@ -99,11 +99,11 @@ Also make the calculated values available through the provided `stability.pitch.
 
 Before asking ChatGPT for code, complete each prediction in your own words.
 
-1. If `Cm_alpha < 0` and the angle-of-attack disturbance is positive, `delta_Cm` should be `[COMPLETE]` because `[COMPLETE]`.
-2. If `Cm_alpha > 0` and the angle-of-attack disturbance is positive, the response should be `[COMPLETE]` because `[COMPLETE]`.
-3. If `Cm_alpha = 0`, changing angle of attack should `[COMPLETE]`.
-4. If `Cm0` is fixed and the magnitude of a nonzero `Cm_alpha` increases, the trim angle magnitude should `[COMPLETE]`.
-5. Doubling `disturbanceAlphaDeg` while holding `Cm_alpha` fixed should `[COMPLETE]`.
+1. If `Cm_alpha < 0` and the angle-of-attack disturbance is positive, `delta_Cm` should be `[negative]` because `[Cm_alpha is negative]`.
+2. If `Cm_alpha > 0` and the angle-of-attack disturbance is positive, the response should be `[nose up]` because `[Cm_alpha is positive]`.
+3. If `Cm_alpha = 0`, changing angle of attack should `[not change Cm_alpha]`.
+4. If `Cm0` is fixed and the magnitude of a nonzero `Cm_alpha` increases, the trim angle magnitude should `[decrease]`.
+5. Doubling `disturbanceAlphaDeg` while holding `Cm_alpha` fixed should 'double delta Cm'.
 
 ## 8. Reference Calculation — STUDENT COMPLETES
 
@@ -111,28 +111,28 @@ Use the assigned class values or values approved by your instructor. Show the su
 
 ```text
 Inputs:
-Cm0 = [COMPLETE]
-Cm_alpha = [COMPLETE] 1/rad
-alpha = [COMPLETE] deg
-delta_alpha = [COMPLETE] deg
+Cm0 = 0.04
+Cm_alpha =-0.8 1/rad
+alpha = 2.86 deg
+delta_alpha = +2.00 deg
 
 Angle conversion:
-alpha_rad = [SHOW WORK]
-delta_alpha_rad = [SHOW WORK]
+alpha_rad = 2.86 * pi / 180 = 0.0499164166 rad
+delta_alpha_rad = +2.00 * pi / 180 = 0.0349065850
 
 Current pitching-moment coefficient:
-Cm(alpha) = [SHOW WORK]
+Cm(alpha) = [0.000066866712]
 
 Trim angle:
-alpha_trim_rad = [SHOW WORK]
-alpha_trim_deg = [SHOW WORK]
+alpha_trim_rad = [0.05 rad]
+alpha_trim_deg = [2.864788976 deg]
 
 Disturbance response:
-delta_Cm = [SHOW WORK]
+delta_Cm = [-0.02792526803 ]
 
 Expected classifications:
-selected condition = [trimmed / not trimmed]
-disturbance tendency = [restoring / neutral / destabilizing]
+selected condition = [not trimmed]
+disturbance tendency = [restoring]
 ```
 
 ## 9. Verification Cases — STUDENT COMPLETES
@@ -144,7 +144,22 @@ Define all three cases before implementation. Include exact inputs, expected out
 Use your Section 8 reference calculation.
 
 ```text
-[COMPLETE]
+[Inputs:
+Cm0 = 0.04
+Cm_alpha = -0.8 1/rad
+alpha = 2.86 deg
+delta_alpha = +2.00 deg
+
+Expected outputs:
+Cm(alpha) = 0.000066866712 (dimensionless)
+alpha_trim = 2.864788976 deg
+delta_Cm = -0.02792526803 (dimensionless)
+selected condition = not trimmed
+disturbance tendency = restoring
+
+Tolerance:
+Use an absolute tolerance of 1e-6 for the calculated Cm(alpha) and delta_Cm values.
+Use an absolute tolerance of 1e-6 deg for the calculated trim angle.]
 ```
 
 ### 9.2 Behavioral case
@@ -152,7 +167,19 @@ Use your Section 8 reference calculation.
 Change one input and state the exact trend or sign that must result.
 
 ```text
-[COMPLETE]
+[Starting inputs:
+Cm0 = 0.04
+Cm_alpha = -0.8 1/rad
+alpha = 2.86 deg
+disturbance_alpha = +2.00 deg
+
+Change:
+disturbance_alpha from +2.00 deg to +4.00 deg.
+
+Expected behavior:
+delta_Cm should double in magnitude and remain negative.
+The disturbance tendency should remain restoring.
+The selected Cm(alpha) and trim angle should not change because Cm0, Cm_alpha, and the selected angle of attack are unchanged.]
 ```
 
 ### 9.3 Boundary or sanity case
@@ -160,7 +187,21 @@ Change one input and state the exact trend or sign that must result.
 Use an informative boundary such as zero slope, zero disturbance, or the trim condition. State the exact behavior expected and why division by zero or a false physical claim must not occur.
 
 ```text
-[COMPLETE]
+[Inputs:
+Cm0 = 0.04
+Cm_alpha = 0 1/rad
+alpha = 2.86 deg
+disturbance_alpha = +2.00 deg
+
+Expected behavior:
+Cm(alpha) = 0.04 (dimensionless)
+delta_Cm = 0 (dimensionless)
+selected condition = not trimmed
+trim angle = not available
+disturbance tendency = neutral
+
+Reason:
+When Cm_alpha = 0, the model has no change in Cm with angle of attack, so there is no unique trim angle and division by zero must not occur. Because delta_Cm is zero, the disturbance classification is neutral.]
 ```
 
 ## 10. Feature Requirements
@@ -196,7 +237,7 @@ Do not modify any existing file.
 In one or two sentences, state what decision the completed feature will support and what it cannot establish.
 
 ```text
-[COMPLETE]
+[The completed feature supports the decision of whether the selected angle of attack is trimmed and whether a small angle-of-attack disturbance has a restoring, neutral, or destabilizing moment tendency under the simplified linear model. It cannot establish aircraft safety, controllability, flightworthiness, damping, handling quality, or real-world dynamic behavior.]
 ```
 
 ---
