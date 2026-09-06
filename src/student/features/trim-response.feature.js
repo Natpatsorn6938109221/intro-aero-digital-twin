@@ -1,3 +1,4 @@
+import { label } from "three/tsl";
 import {
   calculateCm,
   calculateCmAlphaPlot,
@@ -126,14 +127,8 @@ function makePlots(aircraft) {
     {
       id: "cm-alpha",
       title: "Cm–alpha relationship",
-      xAxis: {
-        label: "Angle of attack",
-        unit: "deg"
-      },
-      yAxis: {
-        label: "Pitching-moment coefficient",
-        unit: ""
-      },
+      xLabel: "Angle of attack (deg)",
+yLabel: "Pitching-moment coefficient (dimensionless)",
       series: [
         {
           id: "cm-alpha-series",
@@ -189,7 +184,7 @@ function makeVerificationCases() {
   return [
     {
       id: "numerical",
-      title: "Numerical reference case",
+      label: "Numerical reference case",
       inputs: {
         cm0: 0.04,
         cmAlphaPerRad: -0.8,
@@ -230,7 +225,7 @@ function makeVerificationCases() {
 
     {
       id: "behavioral",
-      title: "Disturbance doubling case",
+      label: "Disturbance doubling case",
       inputs: {
         start: {
           cm0: 0.04,
@@ -279,7 +274,7 @@ function makeVerificationCases() {
 
     {
       id: "boundary",
-      title: "Zero-slope boundary case",
+      label: "Zero-slope boundary case",
       inputs: {
         cm0: 0.04,
         cmAlphaPerRad: 0,
