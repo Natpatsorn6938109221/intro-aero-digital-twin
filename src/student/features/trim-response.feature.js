@@ -1,53 +1,31 @@
 import {
-  TRIM_TOLERANCE,
   calculateCm,
   calculateCmAlphaPlot,
-  calculateDeltaCm,
-  calculateTrimAngleDeg,
   calculateTrimResponse
 } from "../physics/trim-response.js";
 
 const REQUIRED_CAPABILITY_ID = "loads.pitch.component-sum";
-const REQUIRED_CAPABILITY_VERSION = 1;
 
-function hasRequiredCapability(capabilityContext) {
-  const capabilities = capabilityContext?.capabilities;
-
-  if (Array.isArray(capabilities)) {
-    return capabilities.some((capability) => {
-      if (typeof capability === "string") {
-        return capability === REQUIRED_CAPABILITY_ID;
-      }
-
-      return (
-        capability?.id === REQUIRED_CAPABILITY_ID &&
-        Number(capability?.version) >= REQUIRED_CAPABILITY_VERSION
-      );
-    });
+function requireStage3Capability(capabilities) {
+  if (!capabilities?.[REQUIRED_CAPABILITY_ID]) {
+    throw new TypeError(
+      "Stage 3 component-sum capability is required."
+    );
   }
-
-  if (capabilities && typeof capabilities === "object") {
-    const capability = capabilities[REQUIRED_CAPABILITY_ID];
-
-    if (typeof capability === "number") {
-      return capability >= REQUIRED_CAPABILITY_VERSION;
-    }
-
-    if (typeof capability === "object") {
-      return Number(capability?.version) >= REQUIRED_CAPABILITY_VERSION;
-    }
-  }
-
-  return false;
 }
 
 function finite(value) {
-  return typeof value === "number" && Number.isFinite(value);
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  );
 }
 
 function closeTo(actual, expected, tolerance) {
-  return finite(actual) &&
-    Math.abs(actual - expected) <= tolerance;
+  return (
+    finite(actual) &&
+    Math.abs(actual - expected) <= tolerance
+  );
 }
 
 function makeResults(response) {
@@ -67,78 +45,76 @@ function makeResults(response) {
         response.trimAngleDeg === null
           ? "not available"
           : response.trimAngleDeg,
-      unit: response.trimAngleDeg === null ? "" : "deg",
-      precision: 9,
-      emphasis: false
+      unit:
+        response.trimAngleDeg === null
+          ? ""
+          : "deg",
+      precision: 9
     },
     {
       key: "delta-cm",
       label: "delta_Cm",
       value: response.deltaCm,
       unit: "",
-      precision: 9,
-      emphasis: false
+      precision: 9
     },
     {
       key: "trim-status",
       label: "Selected condition",
-      value: response.trimmed ? "trimmed" : "not trimmed",
+      value: response.trimmed
+        ? "trimmed"
+        : "not trimmed",
       unit: "",
-      precision: 0,
-      emphasis: false
+      precision: 0
     },
     {
       key: "disturbance-tendency",
       label: "Disturbance tendency",
       value: response.disturbanceTendency,
       unit: "",
-      precision: 0,
-      emphasis: false
+      precision: 0
     }
   ];
 }
 
 function makeDecision(response) {
-  if (response.disturbanceTendency === "destabilizing") {
-    return {
-      question:
-        "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?",
-      interpretation:
-        response.trimmed
-          ? "The selected condition is trimmed, but the disturbance has a destabilizing moment tendency under the simplified linear model."
-          : "The selected condition is not trimmed and the disturbance has a destabilizing moment tendency under the simplified linear model.",
-      status: "caution"
-    };
-  }
+  const question =
+    "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?";
 
   if (
     response.trimmed &&
     response.disturbanceTendency === "restoring"
   ) {
     return {
-      question:
-        "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?",
+      question,
       interpretation:
         "The selected condition is trimmed and the disturbance has a restoring moment tendency under the simplified linear model.",
       status: "pass"
     };
   }
 
+  if (response.disturbanceTendency === "destabilizing") {
+    return {
+      question,
+      interpretation: response.trimmed
+        ? "The selected condition is trimmed, but the disturbance has a destabilizing moment tendency under the simplified linear model."
+        : "The selected condition is not trimmed and the disturbance has a destabilizing moment tendency under the simplified linear model.",
+      status: "caution"
+    };
+  }
+
   if (response.disturbanceTendency === "neutral") {
     return {
-      question:
-        "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?",
-      interpretation:
-        response.trimmed
-          ? "The selected condition is trimmed, while the disturbance is neutral under the simplified linear model."
-          : "The selected condition is not trimmed, while the disturbance is neutral under the simplified linear model.",
+      question,
+      interpretation: response.trimmed
+        ? "The selected condition is trimmed, while the disturbance is neutral under the simplified linear model."
+        : "The selected condition is not trimmed, while the disturbance is neutral under the simplified linear model.",
       status: "neutral"
     };
   }
 
   return {
-    question:
-      "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?",
+    question,
     interpretation:
       "The selected condition is not trimmed, but the disturbance has a restoring moment tendency under the simplified linear model.",
     status: "caution"
@@ -164,8 +140,7 @@ function makePlots(aircraft) {
           label: "Cm(alpha)",
           points: calculateCmAlphaPlot(
             aircraft.cm0,
-            aircraft.cmAlphaPerRad,
-            aircraft.angleOfAttackDeg
+            aircraft.cmAlphaPerRad
           )
         }
       ],
@@ -182,7 +157,7 @@ function makePlots(aircraft) {
   ];
 }
 
-function makeVerificationCases(aircraft) {
+function makeVerificationCases() {
   const numerical = calculateTrimResponse({
     cm0: 0.04,
     cmAlphaPerRad: -0.8,
@@ -234,12 +209,25 @@ function makeVerificationCases(aircraft) {
         deltaCm: 1e-6
       },
       passed:
-        closeTo(numerical.cm, 0.000066866712, 1e-6) &&
-        closeTo(numerical.trimAngleDeg, 2.864788976, 1e-6) &&
-        closeTo(numerical.deltaCm, -0.02792526803, 1e-6) &&
+        closeTo(
+          numerical.cm,
+          0.000066866712,
+          1e-6
+        ) &&
+        closeTo(
+          numerical.trimAngleDeg,
+          2.864788976,
+          1e-6
+        ) &&
+        closeTo(
+          numerical.deltaCm,
+          -0.02792526803,
+          1e-6
+        ) &&
         numerical.trimmed === false &&
         numerical.disturbanceTendency === "restoring"
     },
+
     {
       id: "behavioral",
       title: "Disturbance doubling case",
@@ -273,9 +261,10 @@ function makeVerificationCases(aircraft) {
           2 * Math.abs(behavioralStart.deltaCm),
           1e-12
         ) &&
-        behavioralChanged.deltaCm < 0 &&
         behavioralStart.deltaCm < 0 &&
-        behavioralChanged.disturbanceTendency === "restoring" &&
+        behavioralChanged.deltaCm < 0 &&
+        behavioralChanged.disturbanceTendency ===
+          "restoring" &&
         closeTo(
           behavioralChanged.cm,
           behavioralStart.cm,
@@ -287,6 +276,7 @@ function makeVerificationCases(aircraft) {
           1e-12
         )
     },
+
     {
       id: "boundary",
       title: "Zero-slope boundary case",
@@ -326,36 +316,42 @@ export const feature = {
   category: "Stability · Student feature",
   learningMode: "concept",
   topicId: "stability",
+
   inputKeys: [
     "cm0",
     "cmAlphaPerRad",
     "angleOfAttackDeg",
     "disturbanceAlphaDeg"
   ],
+
   requiresCapabilities: [
     {
       id: "loads.pitch.component-sum",
       version: 1
     }
   ],
+
   providesCapabilities: [
     {
       id: "stability.pitch.cm-alpha",
       version: 1
     }
   ],
+
   assumptions: [
     "The Cm–alpha relationship is linear over the investigated range.",
     "The model is quasi-static and represents a small disturbance about the selected condition.",
     "Cm0 and Cm_alpha represent the same aircraft configuration and flight condition.",
     "The assigned sign convention is positive nose-up pitching moment and positive nose-up angle of attack."
   ],
+
   validityLimits: [
     "Do not use this linear relationship at stall, at large angle of attack, or where aerodynamic coefficients are strongly nonlinear.",
     "This model does not calculate a time history, damping, control motion, or handling quality.",
     "A restoring tendency in this model is not proof of acceptable safety, controllability, or flightworthiness.",
     "The calculated trim angle is meaningful only when the linear model remains valid at that angle."
   ],
+
   simulation: {
     display: "analysis-only",
     durationS: 1,
@@ -365,30 +361,13 @@ export const feature = {
   },
 
   analyze(aircraft, capabilityContext) {
-    const capabilityAvailable =
-      hasRequiredCapability(capabilityContext);
-
-    if (!capabilityAvailable) {
-      return {
-        results: [],
-        verificationCases: [],
-        decision: {
-          question:
-            "At the selected angle of attack, is the simplified pitching-moment model trimmed, and does a small angle-of-attack disturbance create a restoring moment tendency?",
-          interpretation:
-            "The required Stage 3 capability is not available, so Stage 4 analysis remains locked.",
-          status: "caution"
-        },
-        plots: [],
-        scene: null
-      };
-    }
+    requireStage3Capability(capabilityContext);
 
     const response = calculateTrimResponse(aircraft);
 
     return {
       results: makeResults(response),
-      verificationCases: makeVerificationCases(aircraft),
+      verificationCases: makeVerificationCases(),
       decision: makeDecision(response),
       plots: makePlots(aircraft),
       scene: null
@@ -403,14 +382,20 @@ export const model = {
     const aircraft = runtimeContext?.aircraft;
 
     if (!aircraft) {
-      throw new TypeError("runtimeContext.aircraft is required");
+      throw new TypeError(
+        "runtimeContext.aircraft is required"
+      );
     }
+
+    requireStage3Capability(
+      runtimeContext?.capabilities
+    );
 
     const response = calculateTrimResponse(aircraft);
 
     return {
       values: {
-        cmAlpha: calculateCm(
+        cm: calculateCm(
           aircraft.cm0,
           aircraft.cmAlphaPerRad,
           aircraft.angleOfAttackDeg
@@ -421,7 +406,8 @@ export const model = {
             : response.trimAngleDeg,
         deltaCm: response.deltaCm,
         trimmed: response.trimmed,
-        disturbanceTendency: response.disturbanceTendency
+        disturbanceTendency:
+          response.disturbanceTendency
       }
     };
   }
